@@ -1,2 +1,2 @@
-# mchairbot..github.io
+# mchairbot.github.io
 mchairbot html
