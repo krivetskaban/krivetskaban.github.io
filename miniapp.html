@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            background: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .error { color: #ff6b6b; }
+        .success { color: #4CAF50; }
+        .warning { color: #ffa500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>🔍 Тест Mini App</h2>
+            <p>Диагностика подключения к боту</p>
+        </div>
+
+        <div class="card">
+            <h3>📊 Информация о WebApp</h3>
+            <div class="info" id="webappInfo">Загрузка...</div>
+        </div>
+
+        <div class="card">
+            <h3>👤 Данные пользователя</h3>
+            <div class="info" id="userInfo">Загрузка...</div>
+        </div>
+
+        <div class="card">
+            <h3>🧪 Тесты</h3>
+            <button onclick="testSubscriptionCheck()" id="testBtn1">
+                🔍 Тест проверки подписки
+            </button>
+            <button onclick="testDataSend()" id="testBtn2">
+                📤 Тест отправки данных
+            </button>
+            <button onclick="clearLog()">
+                🗑️ Очистить лог
+            </button>
+        </div>
+
+        <div class="card">
+            <h3>📝 Лог операций</h3>
+            <div class="log" id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            logContainer.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '';
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Mini App загружен');
+            
+            try {
+                // Инициализация Telegram WebApp
+                tg.ready();
+                tg.expand();
+                log('✅ Telegram WebApp инициализирован', 'success');
+                
+                // Информация о WebApp
+                const webappInfo = document.getElementById('webappInfo');
+                webappInfo.innerHTML = `
+                    <strong>Версия:</strong> ${tg.version}<br>
+                    <strong>Платформа:</strong> ${tg.platform}<br>
+                    <strong>Цветовая схема:</strong> ${tg.colorScheme}<br>
+                    <strong>Высота окна:</strong> ${tg.viewportHeight}<br>
+                    <strong>Поддержка sendData:</strong> ${typeof tg.sendData === 'function' ? '✅ Да' : '❌ Нет'}
+                `;
+                
+                // Информация о пользователе
+                const userInfo = document.getElementById('userInfo');
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const user = tg.initDataUnsafe.user;
+                    userInfo.innerHTML = `
+                        <strong>ID:</strong> ${user.id}<br>
+                        <strong>Имя:</strong> ${user.first_name || 'Не указано'}<br>
+                        <strong>Username:</strong> @${user.username || 'Не указан'}<br>
+                        <strong>Язык:</strong> ${user.language_code || 'Не указан'}
+                    `;
+                    log(`👤 Пользователь: ${user.id} (@${user.username || 'без username'})`, 'info');
+                } else {
+                    userInfo.innerHTML = '❌ Данные пользователя недоступны';
+                    log('❌ Данные пользователя недоступны', 'error');
+                }
+                
+                // Проверка initData
+                if (tg.initData) {
+                    log(`📋 initData получен (длина: ${tg.initData.length})`, 'success');
+                } else {
+                    log('❌ initData не получен', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Ошибка инициализации: ${error.message}`, 'error');
+            }
+        });
+
+        function testSubscriptionCheck() {
+            const btn = document.getElementById('testBtn1');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Тестируем...';
+            
+            log('🔍 Начинаем тест проверки подписки', 'info');
+            
+            try {
+                // Проверяем доступность функции sendData
+                if (typeof tg.sendData !== 'function') {
+                    log('❌ tg.sendData недоступен!', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '🔍 Тест проверки подписки';
+                    return;
+                }
+                
+                // Подготавливаем данные
+                const testData = {
+                    action: 'check_subscription',
+                    user_id: tg.initDataUnsafe?.user?.id,
+                    test: true,
+                    timestamp: Date.now()
+                };
+                
+                log(`📤 Отправляем данные: ${JSON.stringify(testData)}`, 'info');
+                
+                // Отправляем данные
+                tg.sendData(JSON.stringify(testData));
+                log('✅ Данные отправлены через tg.sendData', 'success');
+                
+                // Таймаут для сброса кнопки
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '🔍 Тест проверки подписки';
+                    log('⏱️ Таймаут теста завершен', 'warning');
+                }, 5000);
+                
+            } catch (error) {
+                log(`❌ Ошибка отправки: ${error.message}`, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '🔍 Тест проверки подписки';
+            }
+        }
+
+        function testDataSend() {
+            const btn = document.getElementById('testBtn2');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Тестируем...';
+            
+            log('📤 Начинаем общий тест отправки данных', 'info');
+            
+            try {
+                const testData = {
+                    action: 'test_connection',
+                    message: 'Тестовое сообщение от Mini App',
+                    user_id: tg.initDataUnsafe?.user?.id,
+                    timestamp: Date.now(),
+                    random: Math.random()
+                };
+                
+                log(`📋 Тестовые данные: ${JSON.stringify(testData, null, 2)}`, 'info');
+                
+                tg.sendData(JSON.stringify(testData));
+                log('✅ Тестовые данные отправлены', 'success');
+                
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '📤 Тест отправки данных';
+                }, 3000);
+                
+            } catch (error) {
+                log(`❌ Ошибка тестовой отправки: ${error.message}`, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '📤 Тест отправки данных';
+            }
+        }
+
+        // Обработка событий Telegram
+        tg.onEvent('mainButtonClicked', () => {
+            log('🔘 Главная кнопка нажата', 'info');
+        });
+
+        tg.onEvent('backButtonClicked', () => {
+            log('⬅️ Кнопка назад нажата', 'info');
+        });
+
+        // Глобальная обработка ошибок
+        window.onerror = function(message, source, lineno, colno, error) {
+            log(`❌ Глобальная ошибка: ${message} в ${source}:${lineno}`, 'error');
+            return false;
+        };
+
+        // Обработка необработанных промисов
+        window.addEventListener('unhandledrejection', function(event) {
+            log(`❌ Необработанное отклонение промиса: ${event.reason}`, 'error');
+        });
+    </script>
+</body>
+</html>
